@@ -122,7 +122,8 @@ int main(int argc, char const *argv[])
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
     // Setup shader programs
-    GLuint l_programId = LoadShaders("../tools/texture_mapping/texture.vert", "../tools/texture_mapping/texture.frag");
+    // GLuint l_programId = LoadShaders("../tools/texture_mapping/texture.vert", "../tools/texture_mapping/texture.frag");
+    GLuint l_programId = LoadShaders("../tools/texture_mapping/texture.vert", "../tools/video_processing/texture_sobel.frag");
 
 
     std::string l_videoFilePath(argv[1]);
