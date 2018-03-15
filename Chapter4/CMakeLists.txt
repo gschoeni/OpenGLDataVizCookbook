@@ -29,6 +29,7 @@ set(LIBS
     "-framework IOKit"
     "-framework CoreVideo"
     glfw3
+    SOIL
     GLEW
     chapter_four
 )
@@ -38,3 +39,9 @@ link_directories(build)
 # tools
 add_executable(simple tools/simple/main.cpp)
 target_link_libraries(simple ${LIBS} )
+
+add_executable(texture_mapping tools/texture_mapping/main.cpp)
+target_link_libraries(texture_mapping ${LIBS} )
+
+add_executable(video_processing tools/video_processing/main.cpp)
+target_link_libraries(video_processing ${LIBS} )
