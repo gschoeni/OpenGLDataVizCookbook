@@ -42,9 +42,18 @@ static void KeyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_a
 
 int main(int argc, char const *argv[])
 {
-    if (argc < 2)
+    if (argc < 3)
     {
-        printf("Usage: ./render_model <model.obj>\n");
+        printf("Usage: ./render_model <model.obj> <render-type>\n");
+        exit(EXIT_FAILURE);
+    }
+
+    std::string l_renderType(argv[2]);
+    if ("lines" != l_renderType &&
+        "points" != l_renderType &&
+        "triangles" != l_renderType)
+    {
+        printf("Need a valid render type: 'lines', 'points', or 'triangles'\n");
         exit(EXIT_FAILURE);
     }
 
@@ -178,7 +187,18 @@ int main(int argc, char const *argv[])
         // void glUniformMatrix4fv(	GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
         glUniformMatrix4fv(l_mvpMatrixId, 1, GL_FALSE, &l_mvp[0][0]);
 
-        l_loader.Draw(GL_POINTS);
+        if ("lines" == l_renderType)
+        {
+            l_loader.Draw(GL_LINES);
+        }
+        else if ("points" == l_renderType)
+        {
+            l_loader.Draw(GL_POINTS);
+        }
+        else if ("triangles" == l_renderType)
+        {
+            l_loader.Draw(GL_TRIANGLES);
+        }
 
         // Swap the front and back buffers (GLFW uses double buffering) to update the screen and process all pending events:
         glfwSwapBuffers(l_window);
