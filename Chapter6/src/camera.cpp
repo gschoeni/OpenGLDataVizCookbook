@@ -64,3 +64,36 @@ void CCamera::ComputeMatricesFromWindow(GLFWwindow* a_window)
         l_up // up direction
     );
 }
+
+void CCamera::ComputeStereoMatricesFromWindow(
+    GLFWwindow* a_window, float a_IOD, float a_zDepth, bool a_isLeftEye)
+{
+    int l_width, l_height;
+    glfwGetWindowSize(a_window, &l_width, &l_height);
+
+    glm::vec3 l_up(0, -1, 0);
+    glm::vec3 l_zDir(0, 0, -1);
+    // mirror the params with the right eye
+    float l_leftRightDirection = -1.0f;
+    if (a_isLeftEye)
+    {
+        l_leftRightDirection = 1.0f;
+    }
+
+    float l_aspectRatio = (float)l_width / (float) l_height;
+    float l_nearZ = 1.0;
+    float l_farZ = 100.0;
+    double l_frustumShift = (a_IOD / 2.0) * l_nearZ / a_zDepth;
+    float l_top = tan(m_initialFov / 2.0) * l_nearZ;
+    float l_right = (l_aspectRatio * l_top) + (l_frustumShift * l_leftRightDirection);
+    float l_left = (-l_aspectRatio * l_top) + (l_frustumShift * l_leftRightDirection);
+    float l_bottom = -l_top;
+
+    m_projectionMatrix = glm::frustum(l_left, l_right, l_bottom, l_top, l_nearZ, l_farZ);
+
+    m_viewMatrix = glm::lookAt(
+        m_position - l_zDir + glm::vec3((l_leftRightDirection*a_IOD / 2.0), 0, 0), // eye position
+        m_position + glm::vec3((l_leftRightDirection*a_IOD / 2), 0, 0), //centre position
+        l_up // up direction
+    );
+}

@@ -4,8 +4,9 @@
 #include "shader.h"
 #include "common.h"
 
-float g_rotateX = 0.0;
-float g_rotateY = 0.0;
+float g_rotateX = 0.0f;
+float g_rotateY = 0.0f;
+float g_zDepth = 5.0f;
 
 static void KeyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods)
 {
@@ -20,20 +21,26 @@ static void KeyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_a
             glfwSetWindowShouldClose(a_window, GL_TRUE);
             break;
         case GLFW_KEY_SPACE:
-            g_rotateX = 0;
-            g_rotateY = 0;
+            g_rotateX = 0.0f;
+            g_rotateY = 0.0f;
             break;
         case GLFW_KEY_Z:
-            g_rotateX += 0.01;
+            g_rotateX += 0.01f;
             break;
         case GLFW_KEY_X:
-            g_rotateX -= 0.01;
+            g_rotateX -= 0.01f;
             break;
         case GLFW_KEY_A:
-            g_rotateY += 0.01;
+            g_rotateY += 0.01f;
             break;
         case GLFW_KEY_S:
-            g_rotateY -= 0.01;
+            g_rotateY -= 0.01f;
+            break;
+        case GLFW_KEY_UP:
+            g_zDepth += 0.5f;
+            break;
+        case GLFW_KEY_DOWN:
+            g_zDepth -= 0.5f;
             break;
         default:
             break;
@@ -144,9 +151,10 @@ int main(int argc, char const *argv[])
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glPointSize(3.0f);
 
+    bool l_stereo = true;
     CCamera l_camera;
 
-    const float IPD = 0.65f;
+    const float l_IPD = 0.65f;
     while (!glfwWindowShouldClose(l_window))
     {
         // clear screen to black
@@ -163,42 +171,127 @@ int main(int argc, char const *argv[])
          */
          glfwGetFramebufferSize(l_window, &l_width, &l_height);
 
-        // Not stereo
-        glViewport(0, 0, l_width, l_height);
-        l_camera.ComputeMatricesFromWindow(l_window);
+         if (l_stereo)
+         {
+             // left eye, left half of screen
+             bool l_isLeftEye = true;
+             glViewport(0, 0, l_width/2, l_height);
 
-        // how to project z from the view matrix
-        glm::mat4 l_projectionMatrix = l_camera.GetProjectionMatrix();
+             l_camera.ComputeStereoMatricesFromWindow(l_window, l_IPD, g_zDepth, l_isLeftEye);
 
-        // where the camera is wrt the world
-        glm::mat4 l_viewMatrix = l_camera.GetViewMatrix();
+             // how to project z from the view matrix
+             glm::mat4 l_projectionMatrix = l_camera.GetProjectionMatrix();
 
-        // where the model is wrt the world
-        glm::mat4 l_modelMatrix = glm::mat4(1.0);
+             // where the camera is wrt the world
+             glm::mat4 l_viewMatrix = l_camera.GetViewMatrix();
 
-        l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateY, glm::vec3(0.0f, 1.0f, 0.0f));
-        l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateX, glm::vec3(1.0f, 0.0f, 0.0f));
+             // where the model is wrt the world
+             glm::mat4 l_modelMatrix = glm::mat4(1.0);
 
-        // MVP = ModelViewProjection matrix = projection * view * model
-        glm::mat4 l_mvp = l_projectionMatrix * l_viewMatrix * l_modelMatrix;
+             l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateY, glm::vec3(0.0f, 1.0f, 0.0f));
+             l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateX, glm::vec3(1.0f, 0.0f, 0.0f));
 
-        // send our transformation to the currently bound shader
-        // in the "MVP" uniform variable
-        // void glUniformMatrix4fv(	GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-        glUniformMatrix4fv(l_mvpMatrixId, 1, GL_FALSE, &l_mvp[0][0]);
+             // MVP = ModelViewProjection matrix = projection * view * model
+             glm::mat4 l_mvp = l_projectionMatrix * l_viewMatrix * l_modelMatrix;
 
-        if ("lines" == l_renderType)
-        {
-            l_loader.Draw(GL_LINES);
-        }
-        else if ("points" == l_renderType)
-        {
-            l_loader.Draw(GL_POINTS);
-        }
-        else if ("triangles" == l_renderType)
-        {
-            l_loader.Draw(GL_TRIANGLES);
-        }
+             // send our transformation to the currently bound shader
+             // in the "MVP" uniform variable
+             // void glUniformMatrix4fv(	GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+             glUniformMatrix4fv(l_mvpMatrixId, 1, GL_FALSE, &l_mvp[0][0]);
+
+             if ("lines" == l_renderType)
+             {
+                 l_loader.Draw(GL_LINES);
+             }
+             else if ("points" == l_renderType)
+             {
+                 l_loader.Draw(GL_POINTS);
+             }
+             else if ("triangles" == l_renderType)
+             {
+                 l_loader.Draw(GL_TRIANGLES);
+             }
+
+             // Right eye, right half of screen
+             l_isLeftEye = false;
+             glViewport((l_width / 2), 0, (l_width / 2), l_height);
+
+             l_camera.ComputeStereoMatricesFromWindow(l_window, l_IPD, g_zDepth, l_isLeftEye);
+
+             // how to project z from the view matrix
+             l_projectionMatrix = l_camera.GetProjectionMatrix();
+
+             // where the camera is wrt the world
+             l_viewMatrix = l_camera.GetViewMatrix();
+
+             // where the model is wrt the world
+             l_modelMatrix = glm::mat4(1.0);
+
+             l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateY, glm::vec3(0.0f, 1.0f, 0.0f));
+             l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateX, glm::vec3(1.0f, 0.0f, 0.0f));
+
+             // MVP = ModelViewProjection matrix = projection * view * model
+             l_mvp = l_projectionMatrix * l_viewMatrix * l_modelMatrix;
+
+             // send our transformation to the currently bound shader
+             // in the "MVP" uniform variable
+             // void glUniformMatrix4fv(	GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+             glUniformMatrix4fv(l_mvpMatrixId, 1, GL_FALSE, &l_mvp[0][0]);
+
+             if ("lines" == l_renderType)
+             {
+                 l_loader.Draw(GL_LINES);
+             }
+             else if ("points" == l_renderType)
+             {
+                 l_loader.Draw(GL_POINTS);
+             }
+             else if ("triangles" == l_renderType)
+             {
+                 l_loader.Draw(GL_TRIANGLES);
+             }
+         }
+         else
+         {
+             // Not stereo
+             glViewport(0, 0, l_width, l_height);
+             l_camera.ComputeMatricesFromWindow(l_window);
+
+             // how to project z from the view matrix
+             glm::mat4 l_projectionMatrix = l_camera.GetProjectionMatrix();
+
+             // where the camera is wrt the world
+             glm::mat4 l_viewMatrix = l_camera.GetViewMatrix();
+
+             // where the model is wrt the world
+             glm::mat4 l_modelMatrix = glm::mat4(1.0);
+
+             l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateY, glm::vec3(0.0f, 1.0f, 0.0f));
+             l_modelMatrix = glm::rotate(l_modelMatrix, glm::pi<float>() * g_rotateX, glm::vec3(1.0f, 0.0f, 0.0f));
+
+             // MVP = ModelViewProjection matrix = projection * view * model
+             glm::mat4 l_mvp = l_projectionMatrix * l_viewMatrix * l_modelMatrix;
+
+             // send our transformation to the currently bound shader
+             // in the "MVP" uniform variable
+             // void glUniformMatrix4fv(	GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+             glUniformMatrix4fv(l_mvpMatrixId, 1, GL_FALSE, &l_mvp[0][0]);
+
+             if ("lines" == l_renderType)
+             {
+                 l_loader.Draw(GL_LINES);
+             }
+             else if ("points" == l_renderType)
+             {
+                 l_loader.Draw(GL_POINTS);
+             }
+             else if ("triangles" == l_renderType)
+             {
+                 l_loader.Draw(GL_TRIANGLES);
+             }
+         }
+
+
 
         // Swap the front and back buffers (GLFW uses double buffering) to update the screen and process all pending events:
         glfwSwapBuffers(l_window);

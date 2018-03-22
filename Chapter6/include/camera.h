@@ -16,6 +16,7 @@ public:
     glm::mat4 GetProjectionMatrix();
 
     void ComputeMatricesFromWindow(GLFWwindow* a_window);
+    void ComputeStereoMatricesFromWindow(GLFWwindow* a_window, float a_IOD, float a_zDepth, bool a_isLeftEye);
 
 private:
     double m_lastTime;
