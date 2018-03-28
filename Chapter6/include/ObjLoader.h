@@ -24,7 +24,6 @@ public:
 
 private:
     const struct aiScene* m_scene;
-    GLuint m_sceneList;
     aiVector3D m_sceneMin, m_sceneMax, m_sceneCenter;
     float m_scale;
     size_t m_numVertices;

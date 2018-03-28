@@ -5,7 +5,6 @@ CObjLoader::CObjLoader()
 {
     m_scale = 1.0f;
     m_scene = NULL;
-    m_sceneList = 0;
     m_numVertices = 0;
 }
 

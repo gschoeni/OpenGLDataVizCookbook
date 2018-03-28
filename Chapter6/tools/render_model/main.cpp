@@ -121,6 +121,9 @@ int main(int argc, char const *argv[])
     // get the location for our "Model View Projection" uniform variable
 	GLuint l_mvpMatrixId = glGetUniformLocation(l_programId, "MVP");
 
+    // use our shader
+    glUseProgram(l_programId);
+
     // use a large buffer to store the entire scene
     GLfloat	*l_vertexBufferData = (GLfloat*) malloc(l_loader.GetNumVertices()*sizeof(GLfloat));
     l_loader.LoadVertices(l_vertexBufferData);
@@ -139,9 +142,6 @@ int main(int argc, char const *argv[])
     glBindBuffer(GL_ARRAY_BUFFER, l_vertexBuffer);
     // Load data
     glBufferData(GL_ARRAY_BUFFER, l_loader.GetNumVertices()*sizeof(GLfloat), l_vertexBufferData, GL_STATIC_DRAW);
-
-    // use our shader
-    glUseProgram(l_programId);
 
     // 1st attribute buffer : vertices for position
     glEnableVertexAttribArray(l_attributeVertexLoc);
@@ -290,8 +290,6 @@ int main(int argc, char const *argv[])
                  l_loader.Draw(GL_TRIANGLES);
              }
          }
-
-
 
         // Swap the front and back buffers (GLFW uses double buffering) to update the screen and process all pending events:
         glfwSwapBuffers(l_window);
