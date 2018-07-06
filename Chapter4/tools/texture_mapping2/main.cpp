@@ -11,12 +11,22 @@
 GLFWwindow* g_window;
 const int WINDOWS_WIDTH = 1280;
 const int WINDOWS_HEIGHT = 720;
+float g_aspectRatio = 16 / 9.0f;
 float g_zOffset = -1.0f;
 float g_rotateY = 0.0f;
 float g_rotateX = 0.0f;
 
 // Our vertices
-static const GLfloat g_vertexBufferObj[] = {
+static const GLfloat g_vertexBufferObj1[] = {
+    -1.0, -1.0f, g_zOffset,
+     0.0, -1.0f, g_zOffset,
+     -1.0,  0.0f, g_zOffset,
+    0.0, -1.0f, g_zOffset,
+     0.0,  0.0f, g_zOffset,
+    -1.0,  0.0f, g_zOffset
+};
+
+static const GLfloat g_vertexBufferObj2[] = {
     0.0, 0.0f, g_zOffset,
     1.0, 0.0f, g_zOffset,
     0.0, 1.0f, g_zOffset,
@@ -26,7 +36,7 @@ static const GLfloat g_vertexBufferObj[] = {
 };
 
 // UV map for the vertices
-static const GLfloat g_uvBufferObj[] = {
+static const GLfloat g_uvBufferObj1[] = {
     1.0f, 0.0f,
     0.0f, 0.0f,
     0.0f, 1.0f,
@@ -35,6 +45,14 @@ static const GLfloat g_uvBufferObj[] = {
     1.0f, 1.0f
 };
 
+static const GLfloat g_uvBufferObj2[] = {
+    1.0f, 0.0f,
+    0.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 1.0f
+};
 
 static void KeyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_action, int a_mods)
 {
@@ -71,9 +89,9 @@ static void KeyCallback(GLFWwindow* a_window, int a_key, int a_scancode, int a_a
 
 int main(int argc, char const *argv[])
 {
-    if (argc < 2)
+    if (argc < 3)
     {
-        fprintf(stderr, "Usage: ./texture_mapping <texture.png>\n");
+        fprintf(stderr, "Usage: ./texture_mapping <texture1.png> <texture2.png>\n");
         exit(EXIT_FAILURE);
     }
 
@@ -124,21 +142,33 @@ int main(int argc, char const *argv[])
     // Setup shader programs
     GLuint l_programId = LoadShaders("../tools/texture_mapping/texture.vert", "../tools/texture_mapping/texture.frag");
 
-    std::string l_imageFilePath(argv[1]);
+    std::string l_imageFilePath1(argv[1]);
+    std::string l_imageFilePath2(argv[2]);
 
-    int l_imageWidth, l_imageHeight, l_channels;
-    printf("Trying to load texture: %s\n", l_imageFilePath.c_str());
-    GLuint l_textureId = LoadImageToTexture(l_imageFilePath.c_str(), &l_imageWidth, &l_imageHeight, &l_channels);
-    if (!l_textureId)
+    int l_image1Width, l_image1Height, l_channels;
+    printf("Trying to load texture: %s\n", l_imageFilePath1.c_str());
+    GLuint l_texture1Id = LoadImageToTexture(l_imageFilePath1.c_str(), &l_image1Width, &l_image1Height, &l_channels);
+    if (!l_texture1Id)
     {
-        fprintf(stderr, "Could not load texture: %s\n", l_imageFilePath.c_str());
+        fprintf(stderr, "Could not load texture: %s\n", l_imageFilePath1.c_str());
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-    printf("loaded texture with id: %u\n", l_textureId);
+    printf("loaded texture1 with id: %u\n", l_texture1Id);
+
+    int l_image2Width, l_image2Height;
+    GLuint l_texture2Id = LoadImageToTexture(l_imageFilePath2.c_str(), &l_image2Width, &l_image2Height, &l_channels);
+    if (!l_texture2Id)
+    {
+        fprintf(stderr, "Could not load texture: %s\n", l_imageFilePath2.c_str());
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+    printf("loaded texture2 with id: %u\n", l_texture2Id);
 
     // set aspect ratio to that of the image
-    printf("Image size %dx%d\n", l_imageWidth, l_imageHeight);
+    g_aspectRatio = (float)(l_image1Width + l_image2Width)/(float)(l_image1Height + l_image2Height);
+    printf("Image 1 size %dx%d Image 2 size %dx%d aspect %f\n", l_image1Width, l_image1Height, l_image2Width, l_image2Height, g_aspectRatio);
 
     // Get the locations of the specific variables in the shader programs
 
@@ -164,58 +194,95 @@ int main(int argc, char const *argv[])
 
     // Our first texture
     // Define our Vertex Array Objects (VAO)
-    GLuint l_vertexArrayObject;
+    GLuint l_vertexArrayObject1;
     // Define our Vertex Buffer Objects
-    GLuint l_vertexBufferObject;
-    GLuint l_uvBufferObject;
-    // glGenVertexArrays(GLsizei n, GLuint *arrays) creates the vertex array
-    // n specifies number of arrays you want to create, in this case just 1
-    glGenVertexArrays(1, &l_vertexArrayObject);
+    GLuint l_vertexBufferObject1;
+    GLuint l_uvBufferObject1;
+    {
+        // glGenVertexArrays(GLsizei n, GLuint *arrays) creates the vertex array
+        // n specifies number of arrays you want to create, in this case just 1
+        glGenVertexArrays(1, &l_vertexArrayObject1);
 
-    // glBindVertexArray makes this new array active if it is not already
-    // You can think of it as:
-    // if (opengl->buffers[l_vertexId] == null)
-    //     opengl->buffers[l_vertexId] = new Buffer()
-    glBindVertexArray(l_vertexArrayObject);
+        // glBindVertexArray makes this new array active if it is not already
+        // You can think of it as:
+        // if (opengl->buffers[l_vertexId] == null)
+        //     opengl->buffers[l_vertexId] = new Buffer()
+        glBindVertexArray(l_vertexArrayObject1);
 
-    /*
-    Pattern for buffer allocation
+        /*
+        Pattern for buffer allocation
 
-    glGenBuffers - generates an id/name for the buffer
-        e.g. buffer = 2
-    glBindBuffer - create buffer if !created
-        e.g. if (opengl->buffers[l_vertexId] == null)
-                opengl->buffers[l_vertexId] = new Buffer()
-    glBufferData - copy data into active buffer
-        e.g. opengl->current_array_buffer->data = new byte[sizeof(points)]
-             memcpy(opengl->current_array_buffer->data, points, sizeof(points))
-    */
+        glGenBuffers - generates an id/name for the buffer
+            e.g. buffer = 2
+        glBindBuffer - create buffer if !created
+            e.g. if (opengl->buffers[l_vertexId] == null)
+                    opengl->buffers[l_vertexId] = new Buffer()
+        glBufferData - copy data into active buffer
+            e.g. opengl->current_array_buffer->data = new byte[sizeof(points)]
+                 memcpy(opengl->current_array_buffer->data, points, sizeof(points))
+        */
 
-    glGenBuffers(1, &l_vertexBufferObject);
-    glBindBuffer(GL_ARRAY_BUFFER, l_vertexBufferObject);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertexBufferObj), g_vertexBufferObj, GL_STATIC_DRAW);
+        glGenBuffers(1, &l_vertexBufferObject1);
+        glBindBuffer(GL_ARRAY_BUFFER, l_vertexBufferObject1);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertexBufferObj1), g_vertexBufferObj1, GL_STATIC_DRAW);
 
-    glGenBuffers(1, &l_uvBufferObject);
-    glBindBuffer(GL_ARRAY_BUFFER, l_uvBufferObject);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_uvBufferObj), g_uvBufferObj, GL_STATIC_DRAW);
+        glGenBuffers(1, &l_uvBufferObject1);
+        glBindBuffer(GL_ARRAY_BUFFER, l_uvBufferObject1);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(g_uvBufferObj1), g_uvBufferObj1, GL_STATIC_DRAW);
 
-    // 1st attribute buffer: vertices for position
-    glEnableVertexAttribArray(l_attribVertex);
-    glBindBuffer(GL_ARRAY_BUFFER, l_vertexBufferObject);
-    glVertexAttribPointer(l_attribVertex, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        // 1st attribute buffer: vertices for position
+        glEnableVertexAttribArray(l_attribVertex);
+        glBindBuffer(GL_ARRAY_BUFFER, l_vertexBufferObject1);
+        glVertexAttribPointer(l_attribVertex, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    // 2nd attribute buffer: UVs mapping
-    glEnableVertexAttribArray(l_attribUV);
-    glBindBuffer(GL_ARRAY_BUFFER, l_uvBufferObject);
-    glVertexAttribPointer(l_attribUV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        // 2nd attribute buffer: UVs mapping
+        glEnableVertexAttribArray(l_attribUV);
+        glBindBuffer(GL_ARRAY_BUFFER, l_uvBufferObject1);
+        glVertexAttribPointer(l_attribUV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    // Bind all texture units and attribute buffers
-    // binds our texture in Texture Unit 0
-    printf("Trying to activate texture 1\n");
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, l_textureId);
-    glUniform1i(l_textureSampleId, 0);
-    printf("Done activating texture 1\n");
+        // Bind all texture units and attribute buffers
+        // binds our texture in Texture Unit 0
+        printf("Trying to activate texture 1\n");
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, l_texture1Id);
+        glUniform1i(l_textureSampleId, 0);
+        printf("Done activating texture 1\n");
+    }
+
+    // Our second texture
+    GLuint l_vertexArrayObject2;
+    GLuint l_vertexBufferObject2;
+    GLuint l_uvBufferObject2;
+    {
+        glGenVertexArrays(1, &l_vertexArrayObject2);
+        glBindVertexArray(l_vertexArrayObject2);
+
+        glGenBuffers(1, &l_vertexBufferObject2);
+        glBindBuffer(GL_ARRAY_BUFFER, l_vertexBufferObject2);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertexBufferObj2), g_vertexBufferObj2, GL_STATIC_DRAW);
+
+        glGenBuffers(1, &l_uvBufferObject2);
+        glBindBuffer(GL_ARRAY_BUFFER, l_uvBufferObject2);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(g_uvBufferObj2), g_uvBufferObj2, GL_STATIC_DRAW);
+
+        // 1st attribute buffer: vertices for position
+        glEnableVertexAttribArray(l_attribVertex);
+        glBindBuffer(GL_ARRAY_BUFFER, l_vertexBufferObject2);
+        glVertexAttribPointer(l_attribVertex, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+        // 2nd attribute buffer: UVs mapping
+        glEnableVertexAttribArray(l_attribUV);
+        glBindBuffer(GL_ARRAY_BUFFER, l_uvBufferObject2);
+        glVertexAttribPointer(l_attribUV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+        // Bind all texture units and attribute buffers
+        // binds our texture in Texture Unit 0
+        printf("Trying to activate texture 2\n");
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, l_texture2Id);
+        glUniform1i(l_textureSampleId, 0);
+        printf("Done activating texture 2\n");
+    }
 
     // Create controls object to manage the view
     CControls l_controls;
@@ -251,8 +318,13 @@ int main(int argc, char const *argv[])
         glUniformMatrix4fv(l_matrixId, 1, GL_FALSE, &l_mvp[0][0]);
 
         // Draw square
-        glBindVertexArray(l_vertexArrayObject);
-        glBindTexture(GL_TEXTURE_2D, l_textureId);
+        glBindVertexArray(l_vertexArrayObject1);
+        glBindTexture(GL_TEXTURE_2D, l_texture1Id);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
+        glBindVertexArray(l_vertexArrayObject2);
+        glBindTexture(GL_TEXTURE_2D, l_texture2Id);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
@@ -268,8 +340,8 @@ int main(int argc, char const *argv[])
     // glDeleteBuffers(1, &l_vertexBuffer);
     // glDeleteBuffers(1, &l_uvBuffer);
     glDeleteProgram(l_programId);
-    glDeleteTextures(1, &l_textureId);
-    glDeleteVertexArrays(1, &l_vertexArrayObject);
+    glDeleteTextures(1, &l_texture1Id);
+    glDeleteVertexArrays(1, &l_vertexArrayObject1);
 
     glfwDestroyWindow(l_window);
     glfwTerminate();

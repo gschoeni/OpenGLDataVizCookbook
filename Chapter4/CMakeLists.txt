@@ -12,24 +12,25 @@ include_directories(include)
 include_directories(/System/Library/Frameworks)
 
 # Project Sources
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE SOURCES "src/*.c*")
 add_library(chapter_four STATIC ${SOURCES})
 
 # Third Party
-find_package(OpenCV REQUIRED)
-find_library(OpenGL_LIBRARY OpenGL)
+#find_package(OpenCV REQUIRED)
+#find_library(OpenGL_LIBRARY OpenGL)
 
 include_directories(/usr/local/include/)
+include_directories(/usr/include/)
 
 set(LIBS
     ${LIBS}
-    ${OpenCV_LIBS}
-    ${OpenGL_LIBRARY}
-    "-framework Cocoa"
-    "-framework IOKit"
-    "-framework CoreVideo"
-    glfw3
-    SOIL
+#    ${OpenCV_LIBS}
+#    ${OpenGL_LIBRARY}
+#    "-framework Cocoa"
+#    "-framework IOKit"
+#    "-framework CoreVideo"
+    GL
+    glfw
     GLEW
     chapter_four
 )
@@ -43,5 +44,5 @@ target_link_libraries(simple ${LIBS} )
 add_executable(texture_mapping tools/texture_mapping/main.cpp)
 target_link_libraries(texture_mapping ${LIBS} )
 
-add_executable(video_processing tools/video_processing/main.cpp)
-target_link_libraries(video_processing ${LIBS} )
+#add_executable(video_processing tools/video_processing/main.cpp)
+#target_link_libraries(video_processing ${LIBS} )
